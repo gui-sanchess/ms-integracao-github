@@ -1,0 +1,16 @@
+# Segredos e Variáveis de Ambiente
+.env
+.env.*
+
+# Ambientes Virtuais (São muito pesados, cada dev cria o seu)
+venv/
+env/
+.venv/
+
+# Arquivos de Cache do Python
+__pycache__/
+*.pyc
+
+# Configurações locais das IDEs (PyCharm, VSCode)
+.idea/
+.vscode/
