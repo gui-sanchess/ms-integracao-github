@@ -5,7 +5,7 @@ from domain.ports import IaClientPort
 class HttpIaClientAdapter(IaClientPort):
     def __init__(self):
         # Busca a URL da variável de ambiente da Azure, com fallback para o localhost
-        self.ia_service_url = os.getenv("IA_SERVICE_URL", "http://localhost:5004/api/analisar")
+        self.ia_service_url = os.getenv("IA_SERVICE_URL", "https://docuia-api-ia.azurewebsites.net/api/analisar")
 
     async def classificar_documento(self, texto: str) -> dict:
         # Abre um cliente HTTP assíncrono
