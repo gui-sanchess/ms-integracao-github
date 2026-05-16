@@ -5,15 +5,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Pega a URL do banco do seu arquivo .env (O mesmo banco do Azure do outro projeto)
+# Puxa a URL inteira diretamente
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()
 
-# ESSA É A FUNÇÃO QUE ESTAVA FALTANDO!
 def get_db():
     db = SessionLocal()
     try:
