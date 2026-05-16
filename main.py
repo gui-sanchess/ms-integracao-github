@@ -1,16 +1,25 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+import os
+import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from adapters.inbound.controllers import router
+from infrastructure.database import engine, Base
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+Base.metadata.create_all(bind=engine)
+app = FastAPI(title="Microsserviço de Integração Git - DocuIA")
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(router)
+
+if __name__ == "__main__":
+    # A Azure injeta a variável PORT. O 8000 fica como segurança local.
+    porta = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=porta)
