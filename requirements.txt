@@ -8,3 +8,4 @@ pydantic
 python-dotenv
 gunicorn
 PyJWT
+azure-storage-blob

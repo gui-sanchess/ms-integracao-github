@@ -8,7 +8,7 @@ from adapters.outbound.ia_client import HttpIaClientAdapter
 from adapters.outbound.github_extractor import GithubExtractorAdapter
 from application.use_cases import ProcessarRepositorioUseCase
 from typing import Optional
-
+from adapters.outbound.blob_service import AzureBlobStorageAdapter
 router = APIRouter()
 
 class RepoRequest(BaseModel):
@@ -54,8 +54,9 @@ async def conectar_repositorio(
         repository = PostgresArtefatoRepository(db)
         extractor = GithubExtractorAdapter()
         ia_client = HttpIaClientAdapter()
+        blob_storage = AzureBlobStorageAdapter()
 
-        use_case = ProcessarRepositorioUseCase(extractor, repository, ia_client)
+        use_case = ProcessarRepositorioUseCase(extractor, repository, ia_client, blob_storage)
 
         # Repassando o usuario_id extraído para o Use Case
         resultado = await use_case.executar(
