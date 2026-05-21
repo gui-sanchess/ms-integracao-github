@@ -33,12 +33,22 @@ async def conectar_repositorio(
         url_limpa = request.url
 
     # Extraindo o ID do usuário diretamente do Token JWT
+        # Extraindo o ID do usuário diretamente do Token JWT de forma blindada
     try:
-        token_puro = authorization.split(" ")[1]
+        token_puro = authorization.replace("Bearer ", "").strip()
         payload = jwt.decode(token_puro, options={"verify_signature": False})
-        usuario_id = int(payload.get("sub"))  # "sub" é onde o sessao.js guarda o ID
-    except Exception:
-        raise HTTPException(status_code=401, detail="Token de autenticação inválido ou ausente.")
+
+        # Procura o ID em vários campos possíveis que o grupo de login pode ter usado
+        user_id_str = payload.get("sub") or payload.get("user_id") or payload.get("id")
+
+        if not user_id_str:
+            raise ValueError(f"ID não encontrado no payload. Conteúdo do token: {payload}")
+
+        usuario_id = int(user_id_str)
+
+    except Exception as e:
+        print(f"🔴 ERRO AO LER TOKEN: {str(e)}")  # Vai aparecer na tela preta da Azure
+        raise HTTPException(status_code=401, detail=f"Token inválido: {str(e)}")
 
     try:
         repository = PostgresArtefatoRepository(db)
