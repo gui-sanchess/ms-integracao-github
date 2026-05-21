@@ -1,6 +1,7 @@
 from domain.entities import Artefato
 from adapters.outbound.github_extractor import GithubExtractorAdapter
 from domain.ports import ArtefatoRepositoryPort, IaClientPort
+from datetime import datetime
 
 
 class ProcessarRepositorioUseCase:
@@ -9,11 +10,14 @@ class ProcessarRepositorioUseCase:
         self.repository = repository
         self.ia_client = ia_client
 
-    async def executar(self, url_repo: str, projeto_id: int, token: str = None, sobrescrever: bool = True) -> dict:
+    # <-- Recebendo o usuario_id nos parâmetros
+    async def executar(self, url_repo: str, projeto_id: int, usuario_id: int, token: str = None,
+                       sobrescrever: bool = True) -> dict:
         arquivos_repo = self.extractor.extrair_arquivos(url_repo, token)
 
         if not arquivos_repo:
-            return {"repositorio": "Desconhecido", "arquivos_processados": 0, "arquivos_ignorados": 0, "deletados": 0}
+            return {"repositorio": "Desconhecido", "arquivos_processados": 0, "arquivos_ignorados": 0,
+                    "arquivos_antigos_removidos": 0}
 
         nome_repo = arquivos_repo[0]["nome_repo"]
         arquivos_deletados = 0
@@ -42,21 +46,18 @@ class ProcessarRepositorioUseCase:
                     nome_arquivo=arq["nome_arquivo"],
                     conteudo_extraido=texto,
                     projeto_id=projeto_id,
-                    usuario_id=1,  # <--- ADICIONADO PARA O BANCO ACEITAR (Modo Demo)
+                    usuario_id=usuario_id,  # <-- Injetando o ID do usuário autenticado no banco!
                     tipo_classificado=resultado_ia.get("tipo_classificado", "Código-Fonte"),
                     tags=tags_finais,
                     resumo=resultado_ia.get("resumo", "Arquivo de código-fonte.")
                 )
 
-                # Para evitar conflito, repassamos a data atual se a entidade exigir
-                from datetime import datetime
+                # Adicionando a data para o banco não reclamar (caso a entidade exija)
                 novo_artefato.data_upload = datetime.utcnow()
 
                 self.repository.salvar(novo_artefato)
                 salvos += 1
-
             except Exception as e:
-                # <--- AGORA ELE GRITA O ERRO NO CONSOLE DA AZURE!
                 print(f"🔴 ERRO FATAL ao processar o arquivo {arq['nome_arquivo']}: {str(e)}")
                 falhas += 1
 

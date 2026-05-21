@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+import jwt  # <-- Lembre-se de instalar com: pip install PyJWT
+from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from infrastructure.database import get_db
@@ -10,16 +11,18 @@ from typing import Optional
 
 router = APIRouter()
 
-
 class RepoRequest(BaseModel):
     url: str
     projeto_id: int
     token: Optional[str] = None
-    sobrescrever: bool = True  # NOVO CAMPO (Padrão é True)
-
+    sobrescrever: bool = True
 
 @router.post("/api/github/conectar")
-async def conectar_repositorio(request: RepoRequest, db: Session = Depends(get_db)):
+async def conectar_repositorio(
+    request: RepoRequest,
+    db: Session = Depends(get_db),
+    authorization: str = Header(...)  # <-- Exigindo o token enviado pelo sessao.js
+):
     if not request.url.startswith("https://github.com/"):
         raise HTTPException(status_code=400, detail="URL inválida. Deve ser do GitHub.")
 
@@ -29,6 +32,14 @@ async def conectar_repositorio(request: RepoRequest, db: Session = Depends(get_d
     else:
         url_limpa = request.url
 
+    # Extraindo o ID do usuário diretamente do Token JWT
+    try:
+        token_puro = authorization.split(" ")[1]
+        payload = jwt.decode(token_puro, options={"verify_signature": False})
+        usuario_id = int(payload.get("sub"))  # "sub" é onde o sessao.js guarda o ID
+    except Exception:
+        raise HTTPException(status_code=401, detail="Token de autenticação inválido ou ausente.")
+
     try:
         repository = PostgresArtefatoRepository(db)
         extractor = GithubExtractorAdapter()
@@ -36,8 +47,14 @@ async def conectar_repositorio(request: RepoRequest, db: Session = Depends(get_d
 
         use_case = ProcessarRepositorioUseCase(extractor, repository, ia_client)
 
-        # Agora repassamos a opção de sobrescrever
-        resultado = await use_case.executar(url_limpa, request.projeto_id, request.token, request.sobrescrever)
+        # Repassando o usuario_id extraído para o Use Case
+        resultado = await use_case.executar(
+            url_repo=url_limpa,
+            projeto_id=request.projeto_id,
+            usuario_id=usuario_id,  # <-- Enviando o ID real
+            token=request.token,
+            sobrescrever=request.sobrescrever
+        )
 
         return {
             "mensagem": "Repositório processado com sucesso!",
