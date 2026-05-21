@@ -5,16 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from adapters.inbound.controllers import router
 from infrastructure.database import engine, Base
 
-
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Microsserviço de Integração Git - DocuIA")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False, # <--- O SEGREDO ESTÁ AQUI! Mudamos para False.
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"],     # Isso aqui é o que garante que o Token JWT vai passar!
 )
 
 app.include_router(router)

@@ -7,3 +7,4 @@ gitpython
 pydantic
 python-dotenv
 gunicorn
+PyJWT
