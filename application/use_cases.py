@@ -42,13 +42,22 @@ class ProcessarRepositorioUseCase:
                     nome_arquivo=arq["nome_arquivo"],
                     conteudo_extraido=texto,
                     projeto_id=projeto_id,
+                    usuario_id=1,  # <--- ADICIONADO PARA O BANCO ACEITAR (Modo Demo)
                     tipo_classificado=resultado_ia.get("tipo_classificado", "Código-Fonte"),
                     tags=tags_finais,
                     resumo=resultado_ia.get("resumo", "Arquivo de código-fonte.")
                 )
+
+                # Para evitar conflito, repassamos a data atual se a entidade exigir
+                from datetime import datetime
+                novo_artefato.data_upload = datetime.utcnow()
+
                 self.repository.salvar(novo_artefato)
                 salvos += 1
+
             except Exception as e:
+                # <--- AGORA ELE GRITA O ERRO NO CONSOLE DA AZURE!
+                print(f"🔴 ERRO FATAL ao processar o arquivo {arq['nome_arquivo']}: {str(e)}")
                 falhas += 1
 
         return {
